@@ -88,8 +88,12 @@ export const InspectDataTab = memo(function InspectDataTab({
   // The join resolves asynchronously, so only use a result computed from the current data
   const transformedData = !data ? [] : shouldJoin && joined?.input === data ? joined.frames : data;
 
+  // Must resolve the index the same way the rendered view does, otherwise exporting a frame
+  // that no longer exists after transformations are applied would pass undefined to the CSV writer
+  const getSelectedFrameIndex = (dataFrames: DataFrame[]) => (!dataFrames[dataFrameIndex] ? 0 : dataFrameIndex);
+
   const exportCsv = (dataFrames: DataFrame[]) => {
-    const dataFrame = dataFrames[dataFrameIndex];
+    const dataFrame = dataFrames[getSelectedFrameIndex(dataFrames)];
 
     downloadDataFrameAsCsv(dataFrame, dataName, {}, transformId, excelCompatibilityMode);
   };
@@ -226,8 +230,7 @@ export const InspectDataTab = memo(function InspectDataTab({
   }
 
   // let's make sure we don't try to render a frame that doesn't exists
-  const index = !dataFrames[dataFrameIndex] ? 0 : dataFrameIndex;
-  const dataFrame = dataFrames[index];
+  const dataFrame = dataFrames[getSelectedFrameIndex(dataFrames)];
   const hasLogs = dataFrames.some((df) => df?.meta?.preferredVisualisationType === 'logs');
   const hasTraces = dataFrames.some((df) => df?.meta?.preferredVisualisationType === 'trace');
   const hasServiceGraph = dataFrames.some((df) => df?.meta?.preferredVisualisationType === 'nodeGraph');
